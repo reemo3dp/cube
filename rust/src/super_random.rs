@@ -12,7 +12,7 @@ use std::time::Instant;
 fn create_cube_rec(
     chain: IndexSet<Coord>,
     rng: &mut XorShiftRng,
-    dim: u32,
+    dim: u8,
     run_start: Instant,
 ) -> Option<IndexSet<Coord>> {
     if chain.len() == (dim * dim * dim).try_into().unwrap() {
@@ -43,7 +43,7 @@ fn create_cube_rec(
 
 pub fn create_cube(
     seed: <XorShiftRng as rand::SeedableRng>::Seed,
-    dim: u32,
+    dim: u8,
     run_start: Instant,
 ) -> Option<Cube> {
     let mut rng = XorShiftRng::from_seed(seed);

@@ -7,12 +7,12 @@ mod randomizer;
 mod super_random;
 
 
-type Coord = [u32; 3];
+type Coord = [u8; 3];
 
 static mut NUM_TRIED: u128 = 0;
 static PRINT_EVERY: u128 = 1000000;
 
-const VALID_NEIGHBOURS: [[i32; 3]; 6] = [
+const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
     [-1, 0, 0],
     [1, 0, 0],
     [0, -1, 0],
@@ -22,33 +22,34 @@ const VALID_NEIGHBOURS: [[i32; 3]; 6] = [
 ];
 
 struct Cube {
-    dim: u32,
+    dim: u8,
     seed: <XorShiftRng as rand::SeedableRng>::Seed,
     path: Vec<Coord>,
 }
 
-fn get_neighbours(coord: Coord, dim: u32) -> Vec<Coord> {
+fn get_neighbours(coord: Coord, dim: u8) -> Vec<Coord> {
+    let mut neighbours = Vec::with_capacity(6); // Pre-allocate for max possible neighbours
     let [x, y, z] = coord;
 
-    crate::VALID_NEIGHBOURS
-        .iter()
-        .flat_map(|[dx, dy, dz]| {
-            let nx: i32 = <u32 as TryInto<i32>>::try_into(x).unwrap() + dx;
-            let ny: i32 = <u32 as TryInto<i32>>::try_into(y).unwrap() + dy;
-            let nz: i32 = <u32 as TryInto<i32>>::try_into(z).unwrap() + dz;
+    // Since we know x, y, z are u8, we can do cheaper bounds checking
+    for &[dx, dy, dz] in crate::VALID_NEIGHBOURS.iter() {
+        // Handle negative results first
+        if (dx < 0 && x == 0) || (dy < 0 && y == 0) || (dz < 0 && z == 0) {
+            continue;
+        }
 
-            let dimu: i32 = dim.try_into().unwrap();
+        // Safe unsigned arithmetic for positive offsets
+        let nx = if dx < 0 { x - (-dx as u8) } else { x + (dx as u8) };
+        let ny = if dy < 0 { y - (-dy as u8) } else { y + (dy as u8) };
+        let nz = if dz < 0 { z - (-dz as u8) } else { z + (dz as u8) };
 
-            if nx < dimu && ny < dimu && nz < dimu && nx >= 0 && ny >= 0 && nz >= 0 {
-                return Some([
-                    nx.try_into().unwrap(),
-                    ny.try_into().unwrap(),
-                    nz.try_into().unwrap(),
-                ]);
-            }
-            None
-        })
-        .collect()
+        // Check upper bounds
+        if nx < dim && ny < dim && nz < dim {
+            neighbours.push([nx, ny, nz]);
+        }
+    }
+
+    neighbours
 }
 
 fn main() {
@@ -56,10 +57,11 @@ fn main() {
 
     let mut seed: <XorShiftRng as SeedableRng>::Seed = Default::default();
     thread_rng().fill(&mut seed);
-    let dim = std::env::args().nth(1).unwrap().parse::<u32>().unwrap();
+    let dim = std::env::args().nth(1).unwrap().parse::<u8>().unwrap();
     println!("// Seed: {:?}", seed);
 
     if let Some(cube) = randomizer::create_cube(seed, dim, start) {
+        println!("// Seed: {:?}", cube.seed);
         println!("DIM = {};", cube.dim);
         println!("PATH = {:?};", cube.path);
     } else {

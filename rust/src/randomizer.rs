@@ -11,7 +11,7 @@ use std::time::Instant;
 fn create_cube_rec(
     chain: &mut IndexSet<Coord>,
     rng: &mut XorShiftRng,
-    dim: u32,
+    dim: u8,
     run_start: Instant,
 ) -> Option<IndexSet<Coord>> {
     if chain.len() == (dim * dim * dim).try_into().unwrap() {
@@ -29,8 +29,10 @@ fn create_cube_rec(
                 if NUM_TRIED % PRINT_EVERY == 0 {
                     println!("//D Stopping at {}", chain.len());
                     println!(
-                        "//D {}",
-                        NUM_TRIED as f64 / (run_start.elapsed().as_millis() as f64)
+                        "//D {:.0} \t({} for {:?})",
+                        NUM_TRIED as f64 / (run_start.elapsed().as_millis() as f64),
+                        NUM_TRIED,
+                        run_start.elapsed()
                     );
                 }
             }
@@ -44,7 +46,7 @@ fn create_cube_rec(
 
 pub fn create_cube(
     seed: <XorShiftRng as rand::SeedableRng>::Seed,
-    dim: u32,
+    dim: u8,
     run_start: Instant,
 ) -> Option<Cube> {
     let mut rng = XorShiftRng::from_seed(seed);

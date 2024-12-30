@@ -13,7 +13,7 @@ use crate::PRINT_EVERY;
 fn create_cube_rec(
     chain: Vec<Coord>,
     rng: &mut XorShiftRng,
-    dim: u32,
+    dim: u8,
     run_start: Instant,
 ) -> Option<Vec<Coord>> {
     if chain.len() == (dim * dim * dim).try_into().unwrap() {
@@ -50,7 +50,7 @@ fn create_cube_rec(
 }
 pub fn create_cube(
     seed: <XorShiftRng as rand::SeedableRng>::Seed,
-    dim: u32,
+    dim: u8,
     run_start: Instant,
 ) -> Option<Cube> {
     let mut rng = XorShiftRng::from_seed(seed);

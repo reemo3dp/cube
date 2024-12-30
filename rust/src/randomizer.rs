@@ -14,7 +14,7 @@ fn create_cube_rec(
     dim: u8,
     run_start: Instant,
 ) -> Option<IndexSet<Coord>> {
-    if chain.len() == (dim * dim * dim).try_into().unwrap() {
+    if chain.len() == (dim * dim * dim).into() {
         return Some(chain.clone());
     }
     let current = chain.last().unwrap();
@@ -52,17 +52,12 @@ pub fn create_cube(
     let mut rng = XorShiftRng::from_seed(seed);
 
     loop {
-        let mut start: Coord = [
-            rng.gen_range(0..dim),
-            rng.gen_range(0..dim),
-            rng.gen_range(0..dim),
-        ];
-        let r = rng.gen_range(0..3);
-        start[r] = 0;
-        start[(r + 1) % 3] = 0;
+        let mut start: Coord = [0, 0, 0];
+        start[rng.gen_range(0..3)] = rng.gen_range(0..dim);
 
-        let mut chain = IndexSet::with_capacity((dim * dim * dim).try_into().unwrap());
+        let mut chain = IndexSet::with_capacity((dim * dim * dim).into());
         chain.insert(start);
+        
         let result = create_cube_rec(&mut chain, &mut rng, dim, run_start).map(|path| Cube {
             dim,
             seed,

@@ -1,20 +1,21 @@
-use rand::prelude::*;
-use rand_xorshift::XorShiftRng;
-use std::time::Instant;
 use crate::get_neighbours;
 use crate::Coord;
 use crate::Cube;
 use crate::NUM_TRIED;
 use crate::PRINT_EVERY;
+use indexmap::IndexSet;
+use rand::prelude::*;
+use rand_xorshift::XorShiftRng;
+use std::time::Instant;
 
 fn create_cube_rec(
-    chain: Vec<Coord>,
+    chain: &mut IndexSet<Coord>,
     rng: &mut XorShiftRng,
     dim: u32,
     run_start: Instant,
-) -> Option<Vec<Coord>> {
+) -> Option<IndexSet<Coord>> {
     if chain.len() == (dim * dim * dim).try_into().unwrap() {
-        return Some(chain);
+        return Some(chain.clone());
     }
     let current = chain.last().unwrap();
 
@@ -22,7 +23,7 @@ fn create_cube_rec(
     neighbours.shuffle(rng);
 
     for neighbour in neighbours {
-        if chain.contains(&neighbour) {
+        if !chain.insert(neighbour) {
             unsafe {
                 NUM_TRIED += 1;
                 if NUM_TRIED % PRINT_EVERY == 0 {
@@ -36,15 +37,10 @@ fn create_cube_rec(
             continue;
         };
 
-        let mut next_chain = chain.clone();
-        next_chain.push(neighbour);
-        let result = create_cube_rec(next_chain, rng, dim, run_start);
-        return result;
+        return create_cube_rec(chain, rng, dim, run_start);
     }
     None
 }
-
-
 
 pub fn create_cube(
     seed: <XorShiftRng as rand::SeedableRng>::Seed,
@@ -63,10 +59,14 @@ pub fn create_cube(
         start[r] = 0;
         start[(r + 1) % 3] = 0;
 
-        let mut chain = Vec::with_capacity((dim*dim*dim).try_into().unwrap());
-        chain.push(start);
-        let result = create_cube_rec(chain, &mut rng, dim, run_start)
-            .map(|path| Cube { dim, seed, path });
+        let mut chain = IndexSet::with_capacity((dim * dim * dim).try_into().unwrap());
+        chain.insert(start);
+        let result = create_cube_rec(&mut chain, &mut rng, dim, run_start).map(|path| Cube {
+            dim,
+            seed,
+            path: path.into_iter().collect(),
+        });
+
         if result.is_some() {
             return result;
         };

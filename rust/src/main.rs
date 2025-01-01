@@ -1,11 +1,11 @@
 use rand::prelude::*;
+use rand_seeder::Seeder;
 use rand_xorshift::XorShiftRng;
-use std::time::Instant;
+use std::{ops::Deref, time::Instant};
 
 mod dynamic_programming;
 mod randomizer;
 mod super_random;
-
 
 type Coord = [u8; 3];
 
@@ -39,9 +39,21 @@ fn get_neighbours(coord: Coord, dim: u8) -> Vec<Coord> {
         }
 
         // Safe unsigned arithmetic for positive offsets
-        let nx = if dx < 0 { x - (-dx as u8) } else { x + (dx as u8) };
-        let ny = if dy < 0 { y - (-dy as u8) } else { y + (dy as u8) };
-        let nz = if dz < 0 { z - (-dz as u8) } else { z + (dz as u8) };
+        let nx = if dx < 0 {
+            x - (-dx as u8)
+        } else {
+            x + (dx as u8)
+        };
+        let ny = if dy < 0 {
+            y - (-dy as u8)
+        } else {
+            y + (dy as u8)
+        };
+        let nz = if dz < 0 {
+            z - (-dz as u8)
+        } else {
+            z + (dz as u8)
+        };
 
         // Check upper bounds
         if nx < dim && ny < dim && nz < dim {
@@ -55,10 +67,19 @@ fn get_neighbours(coord: Coord, dim: u8) -> Vec<Coord> {
 fn main() {
     let start = Instant::now();
 
-    let mut seed: <XorShiftRng as SeedableRng>::Seed = Default::default();
-    thread_rng().fill(&mut seed);
-    let dim = std::env::args().nth(1).unwrap().parse::<u8>().unwrap();
-    println!("// Seed: {:?}", seed);
+    let seed: <XorShiftRng as SeedableRng>::Seed = std::env::var("SEED").map_or_else(
+        |_| {
+            let mut seed: <XorShiftRng as SeedableRng>::Seed = Default::default();
+            thread_rng().fill(&mut seed);
+            seed
+        },
+        |v| Seeder::from(v).make_seed(),
+    );
+
+    let dim = std::env::args()
+        .nth(1)
+        .and_then(|v| v.parse().ok())
+        .unwrap();
 
     if let Some(cube) = randomizer::create_cube(seed, dim, start) {
         println!("// Seed: {:?}", cube.seed);

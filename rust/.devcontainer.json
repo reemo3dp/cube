@@ -11,10 +11,7 @@
         "rust-analyzer.checkOnSave.command": "clippy"
       },
       "extensions": [
-        "vadimcn.vscode-lldb",
-        "mutantdino.resourcemonitor",
         "rust-lang.rust-analyzer",
-        "tamasfe.even-better-toml",
         "MS-vsliveshare.vsliveshare"
       ]
     }

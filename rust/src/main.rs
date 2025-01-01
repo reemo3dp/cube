@@ -5,6 +5,7 @@ use std::{ops::Deref, time::Instant};
 
 mod dynamic_programming;
 mod randomizer;
+mod randomizer_easier;
 mod super_random;
 
 type Coord = [u8; 3];
@@ -81,7 +82,7 @@ fn main() {
         .and_then(|v| v.parse().ok())
         .unwrap();
 
-    if let Some(cube) = randomizer::create_cube(seed, dim, start) {
+    if let Some(cube) = randomizer_easier::create_cube(seed, dim, start) {
         println!("// Seed: {:?}", cube.seed);
         println!("DIM = {};", cube.dim);
         println!("PATH = {:?};", cube.path);

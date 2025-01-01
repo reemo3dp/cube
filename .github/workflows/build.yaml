@@ -1,0 +1,54 @@
+name: Build and Push
+
+on:
+  workflow_dispatch:
+  push:
+
+permissions:
+  packages: write
+  contents: write
+
+jobs:
+  generate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      trunkver: ${{ steps.trunkver.outputs.trunkver }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Generate trunkver
+        id: trunkver
+        uses: crftd-tech/trunkver@main
+        with:
+          baseVersion: "1.0.0"
+          prerelease: "true"
+  
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [generate-version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Generate metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/reemo3dp/cube
+          tags: |
+            type=raw,value=${{ needs.generate-version.outputs.trunkver }}
+            type=raw,value=latest
+      - name: Log in to the Container registry
+        uses: docker/login-action@7ca345011ac4304463197fac0e56eab1bc7e6af0
+        with:
+          registry: "ghcr.io"
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@7e094594beda23fc8f21fa31049f4b203e51096b
+        with:
+          context: ./rust
+          push: ${{ github.ref == 'refs/heads/main' }}
+          build-args: |
+            VERSION=${{ needs.generate-version.outputs.trunkver }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

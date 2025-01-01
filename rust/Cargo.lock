@@ -15,6 +15,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cube"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "rand",
+ "rand_core",
+ "rand_seeder",
+ "rand_xorshift",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -126,17 +137,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d25bf25ec5ae4a3f1b92f929810509a2f53d7dca2f50b794ff57e3face536c8f"
 dependencies = [
  "rand_core",
-]
-
-[[package]]
-name = "rust"
-version = "0.1.0"
-dependencies = [
- "indexmap",
- "rand",
- "rand_core",
- "rand_seeder",
- "rand_xorshift",
 ]
 
 [[package]]

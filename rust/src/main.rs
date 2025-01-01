@@ -1,92 +1,99 @@
-use rand::prelude::*;
+#[macro_use]
+extern crate lazy_static;
+
+use algorithm::Algorithm;
+use clap::Parser;
+use dynamic_programming::DynamicProgramming;
+use lazy_static::initialize;
+use rand::{distributions::Alphanumeric, prelude::*};
 use rand_seeder::Seeder;
 use rand_xorshift::XorShiftRng;
-use std::{ops::Deref, time::Instant};
+use randomizer::Randomizer;
+use randomizer_easier::RandomizerEasier;
+use serde::Serialize;
+use std::time::Instant;
+use super_random::SuperRandom;
 
+mod algorithm;
+mod common;
 mod dynamic_programming;
 mod randomizer;
 mod randomizer_easier;
 mod super_random;
 
-type Coord = [u8; 3];
-
-static mut NUM_TRIED: u128 = 0;
-static PRINT_EVERY: u128 = 1000000;
-
-const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
-    [-1, 0, 0],
-    [1, 0, 0],
-    [0, -1, 0],
-    [0, 1, 0],
-    [0, 0, -1],
-    [0, 0, 1],
-];
-
-struct Cube {
-    dim: u8,
-    seed: <XorShiftRng as rand::SeedableRng>::Seed,
-    path: Vec<Coord>,
+lazy_static! {
+    static ref STARTED: Instant = Instant::now();
 }
+static mut NUM_TRIED: u128 = 0;
+static mut PRINT_EVERY: u128 = 0;
 
-fn get_neighbours(coord: Coord, dim: u8) -> Vec<Coord> {
-    let mut neighbours = Vec::with_capacity(6); // Pre-allocate for max possible neighbours
-    let [x, y, z] = coord;
+#[derive(clap::ValueEnum, Clone, Serialize)]
+#[serde(rename_all = "kebab-case")]
+enum AlgorithmArg {
+    RandomizerEasier,
+    Randomizer,
+    SuperRandom,
+    DynamicProgramming,
+}
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// The algorithm to use for finding a solution
+    #[arg(short, long, value_enum, default_value_t = AlgorithmArg::RandomizerEasier)]
+    algorithm: AlgorithmArg,
 
-    // Since we know x, y, z are u8, we can do cheaper bounds checking
-    for &[dx, dy, dz] in crate::VALID_NEIGHBOURS.iter() {
-        // Handle negative results first
-        if (dx < 0 && x == 0) || (dy < 0 && y == 0) || (dz < 0 && z == 0) {
-            continue;
-        }
+    /// Keep the program running or terminate after the first match
+    #[arg(short, long, default_value_t = false, group = "looping")]
+    r#loop: bool,
 
-        // Safe unsigned arithmetic for positive offsets
-        let nx = if dx < 0 {
-            x - (-dx as u8)
-        } else {
-            x + (dx as u8)
-        };
-        let ny = if dy < 0 {
-            y - (-dy as u8)
-        } else {
-            y + (dy as u8)
-        };
-        let nz = if dz < 0 {
-            z - (-dz as u8)
-        } else {
-            z + (dz as u8)
-        };
+    /// Print Performance Information on STDERR
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool,
 
-        // Check upper bounds
-        if nx < dim && ny < dim && nz < dim {
-            neighbours.push([nx, ny, nz]);
-        }
-    }
+    /// Seed
+    #[arg(short, long, group = "looping")]
+    seed: Option<String>,
 
-    neighbours
+    dim: u8,
 }
 
 fn main() {
-    let start = Instant::now();
+    initialize(&STARTED);
+    let args = Args::parse();
 
-    let seed: <XorShiftRng as SeedableRng>::Seed = std::env::var("SEED").map_or_else(
-        |_| {
-            let mut seed: <XorShiftRng as SeedableRng>::Seed = Default::default();
-            thread_rng().fill(&mut seed);
-            seed
-        },
-        |v| Seeder::from(v).make_seed(),
-    );
+    if args.verbose {
+        unsafe {
+            PRINT_EVERY = 1000000;
+        }
+    }
 
-    let dim = std::env::args()
-        .nth(1)
-        .and_then(|v| v.parse().ok())
-        .unwrap();
+    let algo: Box<dyn Algorithm> = match args.algorithm {
+        AlgorithmArg::RandomizerEasier => Box::new(RandomizerEasier {}),
+        AlgorithmArg::Randomizer => Box::new(Randomizer {}),
+        AlgorithmArg::SuperRandom => Box::new(SuperRandom {}),
+        AlgorithmArg::DynamicProgramming => Box::new(DynamicProgramming {}),
+    };
 
-    if let Some(cube) = randomizer_easier::create_cube(seed, dim, start) {
-        println!("// Seed: {:?}", cube.seed);
-        println!("DIM = {};", cube.dim);
-        println!("PATH = {:?};", cube.path);
-    } else {
-        println!("No solution found!");
+    loop {
+        let seed_string: String = args.seed.clone().unwrap_or_else(|| {
+            thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(10)
+                .map(char::from)
+                .collect()
+        });
+
+        let seed: <XorShiftRng as SeedableRng>::Seed =
+            Seeder::from(seed_string.clone()).make_seed();
+        if let Some(cube) = algo.run(seed, args.dim) {
+            println!("// Seed: {}", seed_string);
+            println!("DIM = {};", cube.dim);
+            println!("PATH = {:?};", cube.path);
+        } else {
+            println!("No solution found!");
+        }
+        if !args.r#loop {
+            break;
+        };
     }
 }

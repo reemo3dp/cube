@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: cube-
+spec:
+  completions: 2
+  parallelism: 2
+  template:
+    metadata:
+      labels:
+        app: cube
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: cube
+      containers:
+      - name: cube
+        image: ghcr.io/reemo3dp/cube:latest
+        args: ["/cube", "5"]
+      restartPolicy: Never

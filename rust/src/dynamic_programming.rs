@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand_xorshift::XorShiftRng;
 
 fn create_cube_rec(chain: Vec<Coord>, rng: &mut XorShiftRng, dim: u8) -> Option<Vec<Coord>> {
-    if chain.len() == (dim * dim * dim).try_into().unwrap() {
+    if chain.len() == (dim * dim * dim).into() {
         return Some(chain);
     }
     let current = chain.last().unwrap();

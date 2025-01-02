@@ -12,7 +12,7 @@ fn create_cube_rec(
     rng: &mut XorShiftRng,
     dim: u8,
 ) -> Option<IndexSet<Coord>> {
-    if chain.len() == (dim * dim * dim).try_into().unwrap() {
+    if chain.len() == (dim * dim * dim).into() {
         return Some(chain);
     }
     let current = chain.last().unwrap();

@@ -1,9 +1,14 @@
 FROM rust AS builder
+WORKDIR /
+RUN cargo new --bin app
 WORKDIR /app
-
 COPY Cargo.lock Cargo.toml ./
-COPY src src
-RUN cargo build --release
+RUN cargo build --release && rm -Rf src/
+
+COPY src ./src
+RUN touch src/main.rs && cargo build --release
+
+RUN set -x; ! [ "$(./target/release/cube --version)" = "Hello, world!" ] 
 
 FROM rust
 RUN apt-get update && apt-get install -y --no-install-recommends tini

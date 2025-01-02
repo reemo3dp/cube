@@ -1,4 +1,4 @@
-use crate::{NUM_TRIED, PRINT_EVERY};
+use crate::{ARC_NUM_TRIED, ARC_PRINT_EVERY};
 
 pub type Coord = [u8; 3];
 pub const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
@@ -11,28 +11,27 @@ pub const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
 ];
 
 pub fn record_failure(chain_len: usize) {
-    unsafe {
-        NUM_TRIED += 1;
-        if PRINT_EVERY > 0 && NUM_TRIED % PRINT_EVERY == 0 {
-            eprint!("\r");
-            eprint!(
-                "//D Last chain: {:3}, {:10.3} chains/ms for {:6}s (tried {:6} chains)",
-                chain_len,
-                NUM_TRIED as f64 / (crate::STARTED.elapsed().as_millis() as f64),
-                crate::STARTED.elapsed().as_secs(),
-                format_number(NUM_TRIED)
-            );
-        }
+    let num_tried = ARC_NUM_TRIED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let print_every = ARC_PRINT_EVERY.load(std::sync::atomic::Ordering::Relaxed);
+    if print_every > 0 && num_tried % print_every == 0 {
+        eprint!("\r");
+        eprint!(
+            "//D Last chain: {:3}, {:10.3} chains/ms for {:6}s (tried {:6} chains)",
+            chain_len,
+            num_tried as f64 / (crate::STARTED.elapsed().as_millis() as f64),
+            crate::STARTED.elapsed().as_secs(),
+            format_number(num_tried)
+        );
     }
 }
 
 const SUFFIXES: [&str; 6] = ["", "K", "M", "G", "T", "P"];
 
-pub fn format_number(n: u128) -> String {
+pub fn format_number(n: u64) -> String {
     for (i, suffix) in SUFFIXES.iter().rev().enumerate() {
-        let pow: u128 = 1000_u128.pow((SUFFIXES.len()-i) as u32);
+        let pow: u64 = 1000_u64.pow((SUFFIXES.len() - i) as u32);
         if n >= pow {
-            return format!("{}{}", n/pow, suffix);
+            return format!("{}{}", n / pow, suffix);
         }
     }
     format!("{}", n)

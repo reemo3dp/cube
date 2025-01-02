@@ -10,8 +10,12 @@ use rand_seeder::Seeder;
 use rand_xorshift::XorShiftRng;
 use randomizer::Randomizer;
 use randomizer_easier::RandomizerEasier;
+use rayon::prelude::*;
 use serde::Serialize;
-use std::time::Instant;
+use std::{
+    sync::{atomic::AtomicU64, Arc},
+    time::Instant,
+};
 use super_random::SuperRandom;
 
 mod algorithm;
@@ -23,9 +27,9 @@ mod super_random;
 
 lazy_static! {
     static ref STARTED: Instant = Instant::now();
+    static ref ARC_NUM_TRIED: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
+    static ref ARC_PRINT_EVERY: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 }
-static mut NUM_TRIED: u128 = 0;
-static mut PRINT_EVERY: u128 = 0;
 
 #[derive(clap::ValueEnum, Clone, Serialize, Debug)]
 #[serde(rename_all = "kebab-case")]
@@ -35,7 +39,7 @@ enum AlgorithmArg {
     SuperRandom,
     DynamicProgramming,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// The algorithm to use for finding a solution
@@ -63,12 +67,19 @@ fn main() {
     let args = Args::parse();
 
     if args.verbose {
-        unsafe {
-            PRINT_EVERY = 1000000;
-        }
+        ARC_PRINT_EVERY.store(1000000, std::sync::atomic::Ordering::Relaxed);
     }
 
-    let algo: Box<dyn Algorithm> = match args.algorithm {
+    (1..rayon::current_num_threads())
+        .into_par_iter()
+        .find_any(|_| {
+            run(args.clone());
+            true
+        });
+}
+
+fn run(args: Args) {
+    let algo: Box<dyn Algorithm + Send + Sync> = match args.algorithm {
         AlgorithmArg::RandomizerEasier => Box::new(RandomizerEasier {}),
         AlgorithmArg::Randomizer => Box::new(Randomizer {}),
         AlgorithmArg::SuperRandom => Box::new(SuperRandom {}),
@@ -89,7 +100,10 @@ fn main() {
             Seeder::from(seed_string.clone()).make_seed();
         if let Some(cube) = algo.run(seed, args.dim) {
             println!("// Seed: {}", seed_string);
-            println!("// Randomizer: {}", args.algorithm.to_possible_value().unwrap().get_name());
+            println!(
+                "// Randomizer: {}",
+                args.algorithm.to_possible_value().unwrap().get_name()
+            );
             println!("// Duration: {:?}", last_start.elapsed());
             println!("DIM = {};", cube.dim);
             println!("PATH = {:?};", cube.path);

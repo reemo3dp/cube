@@ -20,5 +20,6 @@ spec:
       containers:
       - name: cube
         image: ghcr.io/reemo3dp/cube:latest
-        args: ["/cube", "5"]
+        imagePullPolicy: Always
+        args: ["/cube", "-v", "--algorithm", "randomizer", "6"]
       restartPolicy: Never

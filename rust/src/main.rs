@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 use algorithm::Algorithm;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use dynamic_programming::DynamicProgramming;
 use lazy_static::initialize;
 use rand::{distributions::Alphanumeric, prelude::*};
@@ -27,7 +27,7 @@ lazy_static! {
 static mut NUM_TRIED: u128 = 0;
 static mut PRINT_EVERY: u128 = 0;
 
-#[derive(clap::ValueEnum, Clone, Serialize)]
+#[derive(clap::ValueEnum, Clone, Serialize, Debug)]
 #[serde(rename_all = "kebab-case")]
 enum AlgorithmArg {
     RandomizerEasier,
@@ -54,6 +54,7 @@ struct Args {
     #[arg(short, long, group = "looping")]
     seed: Option<String>,
 
+    /// Side length of the cube
     dim: u8,
 }
 
@@ -74,6 +75,7 @@ fn main() {
         AlgorithmArg::DynamicProgramming => Box::new(DynamicProgramming {}),
     };
 
+    let mut last_start = *STARTED;
     loop {
         let seed_string: String = args.seed.clone().unwrap_or_else(|| {
             thread_rng()
@@ -87,13 +89,14 @@ fn main() {
             Seeder::from(seed_string.clone()).make_seed();
         if let Some(cube) = algo.run(seed, args.dim) {
             println!("// Seed: {}", seed_string);
+            println!("// Randomizer: {}", args.algorithm.to_possible_value().unwrap().get_name());
+            println!("// Duration: {:?}", last_start.elapsed());
             println!("DIM = {};", cube.dim);
             println!("PATH = {:?};", cube.path);
-        } else {
-            println!("No solution found!");
+            if !args.r#loop {
+                break;
+            };
+            last_start = Instant::now();
         }
-        if !args.r#loop {
-            break;
-        };
     }
 }

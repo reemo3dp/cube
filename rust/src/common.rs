@@ -14,13 +14,28 @@ pub fn record_failure(chain_len: usize) {
     unsafe {
         NUM_TRIED += 1;
         if PRINT_EVERY > 0 && NUM_TRIED % PRINT_EVERY == 0 {
-            eprintln!("//D Stopping at {}", chain_len);
-            eprintln!(
-                "//D {}",
-                NUM_TRIED as f64 / (crate::STARTED.elapsed().as_millis() as f64)
+            eprint!("\r");
+            eprint!(
+                "//D Last chain: {:3}, {:10.3} chains/ms for {:6}s (tried {:6} chains)",
+                chain_len,
+                NUM_TRIED as f64 / (crate::STARTED.elapsed().as_millis() as f64),
+                crate::STARTED.elapsed().as_secs(),
+                format_number(NUM_TRIED)
             );
         }
     }
+}
+
+const SUFFIXES: [&str; 6] = ["", "K", "M", "G", "T", "P"];
+
+pub fn format_number(n: u128) -> String {
+    for (i, suffix) in SUFFIXES.iter().rev().enumerate() {
+        let pow: u128 = 1000_u128.pow((SUFFIXES.len()-i) as u32);
+        if n >= pow {
+            return format!("{}{}", n/pow, suffix);
+        }
+    }
+    format!("{}", n)
 }
 
 pub struct Cube {

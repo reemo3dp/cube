@@ -6,6 +6,9 @@ COPY Cargo.lock Cargo.toml ./
 RUN cargo build --release && rm -Rf src/
 
 COPY src ./src
+ARG VERSION="0.0.0"
+ENV VERSION=${VERSION}
+RUN env && sed -i "s/version = \"0.0.0-dev\"/version = \"${VERSION}\"/" Cargo.toml
 RUN touch src/main.rs && cargo build --release
 
 RUN set -x; ! [ "$(./target/release/cube --version)" = "Hello, world!" ] 

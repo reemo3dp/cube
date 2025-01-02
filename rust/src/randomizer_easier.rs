@@ -2,7 +2,6 @@ use crate::algorithm::Algorithm;
 use crate::common::get_neighbours;
 use crate::common::record_failure;
 use crate::common::Coord;
-use crate::common::Cube;
 use indexmap::IndexSet;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;
@@ -37,7 +36,7 @@ fn create_cube_rec(
 
 pub struct RandomizerEasier;
 impl Algorithm for RandomizerEasier {
-    fn run(&self, seed: <XorShiftRng as rand::SeedableRng>::Seed, dim: u8) -> Option<Cube> {
+    fn run(&self, seed: <XorShiftRng as rand::SeedableRng>::Seed, dim: u8) -> Option<Vec<Coord>> {
         let mut rng = XorShiftRng::from_seed(seed);
 
         loop {
@@ -47,14 +46,9 @@ impl Algorithm for RandomizerEasier {
             let mut chain = IndexSet::with_capacity((dim * dim * dim).into());
             chain.insert(start);
 
-            let result = create_cube_rec(&mut chain, &mut rng, dim).map(|path| Cube {
-                dim,
-                path: path.into_iter().collect(),
-            });
-
-            if result.is_some() {
-                return result;
-            };
+            if let Some(result) = create_cube_rec(&mut chain, &mut rng, dim) {
+                return Some(result.into_iter().collect());
+            }
         }
     }
 }

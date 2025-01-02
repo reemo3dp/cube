@@ -1,4 +1,4 @@
-use crate::{ARC_NUM_TRIED, ARC_PRINT_EVERY};
+use crate::{NUM_SOLUTIONS_TRIED, PRINT_DEBUG_EVERY_N_FAILURES, SHOULD_STOP};
 
 pub type Coord = [u8; 3];
 pub const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
@@ -11,15 +11,18 @@ pub const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
 ];
 
 pub fn record_failure(chain_len: usize) {
-    let num_tried = ARC_NUM_TRIED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let print_every = ARC_PRINT_EVERY.load(std::sync::atomic::Ordering::Relaxed);
-    if print_every > 0 && num_tried % print_every == 0 {
+    let num_tried = NUM_SOLUTIONS_TRIED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let print_every = PRINT_DEBUG_EVERY_N_FAILURES.load(std::sync::atomic::Ordering::Relaxed);
+    if !SHOULD_STOP.load(std::sync::atomic::Ordering::Relaxed)
+        && print_every > 0
+        && num_tried % print_every == 0
+    {
         eprint!("\r");
         eprint!(
             "//D Last chain: {:3}, {:10.3} chains/ms for {:6}s (tried {:6} chains)",
             chain_len,
-            num_tried as f64 / (crate::STARTED.elapsed().as_millis() as f64),
-            crate::STARTED.elapsed().as_secs(),
+            num_tried as f64 / (crate::STARTED_AT.elapsed().as_millis() as f64),
+            crate::STARTED_AT.elapsed().as_secs(),
             format_number(num_tried)
         );
     }
@@ -35,11 +38,6 @@ pub fn format_number(n: u64) -> String {
         }
     }
     format!("{}", n)
-}
-
-pub struct Cube {
-    pub dim: u8,
-    pub path: Vec<Coord>,
 }
 
 pub fn get_neighbours(coord: Coord, dim: u8) -> Vec<Coord> {

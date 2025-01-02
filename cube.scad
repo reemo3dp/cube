@@ -1,4 +1,4 @@
-include<data.scad>;
+include<data_5.scad>;
 
 
 PUZZLE_SIZE = 20*3;
@@ -126,7 +126,7 @@ module puzzle_piece(prevDirection, curr, rest) {
     let(direction = len(rest)>0 ? rest[0]-curr : undef, index = DIM*DIM*DIM-len(rest)) {
         echo(index, prevDirection*-1 == direction ? "STRAIGHT" : "CURVE");
         if(!PARTIAL || len(rest) % 2 == FIRST_OR_SECOND) {
-            color(alpha=0.3,c = [0.5,0,0]+[0.5, 0, 0]*index/(DIM*DIM*DIM)) translate(curr*SIZE) 
+            color(alpha=0.8,c = [0.5,0,0]+[0.5, 0, 0]*index/(DIM*DIM*DIM)) translate(curr*SIZE) 
                 scale([1, 1, 1]*(1-FUDGE/SIZE))  
                     piece(prevDirection, direction);
 

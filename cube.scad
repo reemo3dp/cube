@@ -1,15 +1,16 @@
-include<rust/data_new.scad>;
+include<data_5.scad>;
 
 
-PUZZLE_SIZE = 30*3;
+PUZZLE_SIZE = 20*3;
 
 SIZE=PUZZLE_SIZE/DIM;
 FUDGE=4;
-HOLE_DIAM = 6;
-NUB_DIAM = HOLE_DIAM+6;
+HOLE_DIAM = 5;
+NUB_DIAM = HOLE_DIAM+3;
+CHAMFER_WIDTH = 2;
 
 PARTIAL=false;
-FIRST_OR_SECOND=1;
+FIRST_OR_SECOND=0;
 
 
 module curve(from, to) {
@@ -99,6 +100,23 @@ module piece(prevDirection, direction) {
                
                rotate(rotIn) translate([0, 0, SIZE/4]) cylinder(h = SIZE/2, d = HOLE_DIAM, center = true, $fn = 100);
             
+            }
+            
+            translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+            mirror([1, 0, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+            mirror([1, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+            mirror([0, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+            rotate([90, 0, 0]) union() {
+                translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+                mirror([1, 0, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+                mirror([1, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+                mirror([0, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+            }
+            rotate([0, 90, 0]) union() {
+                translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+                mirror([1, 0, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+                mirror([1, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+                mirror([0, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
             }
         }
     }

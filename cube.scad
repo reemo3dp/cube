@@ -1,7 +1,7 @@
-include<data_5.scad>;
+include<rust/data_new.scad>;
 
 
-PUZZLE_SIZE = 20*3;
+PUZZLE_SIZE = 30*3;
 
 SIZE=PUZZLE_SIZE/DIM;
 FUDGE=4;

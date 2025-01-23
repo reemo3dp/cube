@@ -1,7 +1,7 @@
-include<data_5.scad>;
+include<data_3_easier.scad>;
 
 
-PUZZLE_SIZE = 20*3;
+PUZZLE_SIZE = 25*3;
 
 SIZE=PUZZLE_SIZE/DIM;
 FUDGE=4;
@@ -10,7 +10,7 @@ NUB_DIAM = HOLE_DIAM+3;
 CHAMFER_WIDTH = 2;
 
 PARTIAL=false;
-FIRST_OR_SECOND=0;
+FIRST_OR_SECOND=1;
 
 
 module curve(from, to) {
@@ -142,7 +142,7 @@ module puzzle(path) {
 
 module puzzle_piece(prevDirection, curr, rest) {
     let(direction = len(rest)>0 ? rest[0]-curr : undef, index = DIM*DIM*DIM-len(rest)) {
-        echo(index, prevDirection*-1 == direction ? "STRAIGHT" : "CURVE");
+        echo(index, index %2 == 1 ? "A" : "B",  !prevDirection ? "START" : !direction ? "END" : prevDirection*-1 == direction ? "STRAIGHT" : "CURVE");
         if(!PARTIAL || len(rest) % 2 == FIRST_OR_SECOND) {
             color(alpha=0.8,c = [0.5,0,0]+[0.5, 0, 0]*index/(DIM*DIM*DIM)) translate(curr*SIZE) 
                 scale([1, 1, 1]*(1-FUDGE/SIZE))  

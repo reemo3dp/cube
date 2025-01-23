@@ -1,4 +1,4 @@
-include<data_5.scad>;
+include<data_3_easier.scad>;
 
 $fn = 100;
 

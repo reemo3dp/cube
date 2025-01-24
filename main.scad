@@ -1,24 +1,29 @@
-include<data_3_easier.scad>;
+include<data_3_difficult.scad>;
 
 $fn = 100;
 
-PUZZLE_SIZE = 20*5;
+PUZZLE_SIZE = 20*3;
 
 SIZE=PUZZLE_SIZE/DIM;
-FUDGE=4;
-HOLE_DIAM = 6;
-NUB_DIAM = HOLE_DIAM+6;
-NUB_DEPTH = SIZE/8;
+EXPLODE=10;
+HOLE_DIAM = 4;
+NUB_DIAM = HOLE_DIAM+4;
+NUB_DEPTH = SIZE/5;
+NUB_FUDGE_FACTOR = 1.01;
 PIN_DIAM = NUB_DIAM;
-PIN_FUDGE = 0.01;
+PIN_FUDGE = 0.1;
+CHAMFER_WIDTH = 2;
+
+CONNECTOR_EDGE = 0;
+CONNECTOR_GAP = 0;
 
 PARTIAL=false;
 FIRST_OR_SECOND=1;
 
 
 
-//whole_piece([0, 0, -1], [0, 0, 1]);
-//translate([30, 0, 0]) whole_piece([0, 0, -1]*-1, [0, 0, 1]*-1);
+//whole_piece([0, 1, 0], [0, -1, 0]);
+//translate([30, 0, 0]) whole_piece([0, 1, 0], [0, 0, 1]);
 //translate([60, 0, 0]) whole_piece([-1, 0, 0], [1, 0, 0]);;
 //translate([90, 0, 0]) whole_piece([-1, 0, 0]*-1, [1, 0, 0]*-1);
 
@@ -50,6 +55,10 @@ FIRST_OR_SECOND=1;
 //translate([120, 30, 0]) whole_piece([0, 0, -1], [0, 0, 1]);
 //translate([150, 30, 0]) whole_piece([0, 0,  1], [0, 0, -1]);
 
+puzzle(PATH);
+//translate([150, 150, 0]) whole_piece([0, -1, 0], [0, 0, 1]);
+//start_piece();
+
 
 module whole_piece(in, out) {
     piece(in, out);
@@ -64,8 +73,6 @@ function to_str(d) =
                         d[2] == 1 ? "UP" : "ILLEGAL";
 
 
-puzzle(PATH);
-
                         
 module puzzle(path) {
     puzzle_rec(undef, path[0], tail(path));
@@ -73,20 +80,17 @@ module puzzle(path) {
 
 module puzzle_rec(in, current, rest) {
     out = len(rest) > 0 ? rest[0] - current : undef;
-    
-    translate(current*SIZE) 
-        scale(1-FUDGE/SIZE) 
-            whole_piece(in, out);
+    index = DIM*DIM*DIM-len(rest);
+    echo(index, in, out, index %2 == 1 ? "A" : "B",  !in ? "START" : !out ? "END" : in*-1 == out ? "STRAIGHT" : "CURVE");
+
+    color(alpha=0.8,c = [0.5, 0.5, 0.5]+[0.5,0,0]*index/(DIM*DIM*DIM)) translate(current*SIZE*(1+EXPLODE/SIZE)) 
+        whole_piece(in, out);
     
     if(len(rest) > 0) {
         puzzle_rec(out*-1, rest[0], tail(rest));
     }
 }
 
-
-function combination_matches(xs, ys) = 
-    (xs[0] == ys[0] && xs[1] == ys[1]) ||
-        (xs[0] == ys[1] && xs[1] == ys[0]);
 
 
 module piece(in, out) {
@@ -127,7 +131,7 @@ module piece(in, out) {
         } else if(inStr == "FRONT" && outStr == "RIGHT") {
             rotate([0, 0, 0]) curved_piece();
         } else if(inStr == "FRONT" && outStr == "UP") {
-            rotate([180, -90, 0]) curved_piece();
+            rotate([180, -90, 180]) curved_piece();
         } else if(inStr == "FRONT" && outStr == "DOWN") {
             rotate([0, 90, 0]) curved_piece();
         } else if(inStr == "FRONT" && outStr == "LEFT") {
@@ -150,7 +154,7 @@ module piece(in, out) {
             rotate([0, 0, 90]) curved_piece();
         } else {
             echo(in, to_str(in), "to", out, to_str(out));
-            #curved_piece();
+            curved_piece();
         }
     }
 }
@@ -163,14 +167,39 @@ function tail(xs) = len(xs) > 1 ? [ for (i = [1:len(xs)-1]) xs[i] ] : [];
 // Pieces
 
 module base_cube() {
-    cube(SIZE, center = true);
+    difference() {
+        cube(SIZE, center = true);
+        
+        translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+mirror([1, 0, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+mirror([1, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+mirror([0, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+rotate([90, 0, 0]) union() {
+    translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+    mirror([1, 0, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+    mirror([1, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+    mirror([0, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+}
+rotate([0, 90, 0]) union() {
+    translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+    mirror([1, 0, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+    mirror([1, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+    mirror([0, 1, 0]) translate([-SIZE, -SIZE, 0]/2) rotate([0, 0, 45]) cube([CHAMFER_WIDTH, CHAMFER_WIDTH, SIZE], center = true);
+            }
+    }
 }
 
 module male_connector() {
     difference() {
-        cylinder(h = NUB_DEPTH, d = NUB_DIAM, center = true);
+        cylinder(h = NUB_DEPTH, d2 = NUB_DIAM, d1 = NUB_DIAM+CONNECTOR_EDGE, center = true);
         cylinder(h = NUB_DEPTH, d = HOLE_DIAM, center = true);
+        cube([CONNECTOR_GAP, NUB_DIAM+CONNECTOR_EDGE, NUB_DEPTH], center= true);
+        cube([NUB_DIAM+CONNECTOR_EDGE, CONNECTOR_GAP, NUB_DEPTH], center= true);
     }
+}
+
+module female_connector() {
+    cylinder(h = NUB_DEPTH, d2 = NUB_FUDGE_FACTOR*NUB_DIAM, d1 = NUB_FUDGE_FACTOR*(NUB_DIAM+CONNECTOR_EDGE), center = true);
 }
 
 module curved_piece() {
@@ -183,7 +212,7 @@ module curved_piece() {
             rotate_extrude(angle=90, $fn = 100)
                 translate([SIZE/2, 0]) circle(d = HOLE_DIAM, $fn = 100);
 
-        translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) cylinder(h = NUB_DEPTH, d = NUB_DIAM, center = true);
+        translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) female_connector();
     }
 }
 
@@ -194,7 +223,7 @@ module straight_piece() {
             translate([0, SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) scale([0.95, 0.95, 1]) male_connector();
         };
         rotate([90, 0, 0]) cylinder(d = HOLE_DIAM, h = SIZE, center = true);
-        translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) male_connector();
+        translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) female_connector();
     }
 }
 
@@ -203,23 +232,21 @@ module start_piece() {
         union() {
             base_cube();
             translate([0, SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) scale([0.95, 0.95, 1]) male_connector();
-            scale([1, 1, 1]*(1-PIN_FUDGE)) pin();
         };
-        translate([0, SIZE/4, 0]) rotate([90, 0, 0]) cylinder(d = HOLE_DIAM, h = SIZE/2, center = true);
         pin();
+        translate([0, SIZE/2, 0]) rotate([90, 0, 0]) cylinder(d = HOLE_DIAM, h = SIZE, center = true);
     }
+    scale([1, 1, 1]*(1-PIN_FUDGE)) pin();
 }
 
 module end_piece() {
     difference() {
-        union() {
-            base_cube();
-            scale([1, 1, 1]*(1-PIN_FUDGE)) pin();
-        };
+        base_cube();
         translate([0, -SIZE/4, 0]) rotate([90, 0, 0]) cylinder(d = HOLE_DIAM, h = SIZE/2, center = true);
         pin();
-        translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) male_connector();
+        translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) female_connector();
     }
+    scale([1, 1, 1]*(1-PIN_FUDGE)) pin();    
 }
 
 

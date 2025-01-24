@@ -14,17 +14,14 @@ use randomizer::Randomizer;
 use randomizer_easier::RandomizerEasier;
 use serde::Serialize;
 use std::{
-    fmt,
-    io::Write,
-    sync::{
+    fmt, io::{Cursor, Write}, string, sync::{
         atomic::{AtomicBool, AtomicU64},
         Arc,
-    },
-    thread::{available_parallelism, sleep, spawn},
-    time::{Duration, Instant},
+    }, thread::{available_parallelism, sleep, spawn}, time::{Duration, Instant}
 };
 use super_random::SuperRandom;
 
+mod solver;
 mod algorithm;
 mod common;
 mod dynamic_programming;
@@ -71,10 +68,16 @@ pub struct Generate {
     
 }
 
+#[derive(Parser, Clone, Debug)]
+pub struct Solve {
+    /// A string of characters describing the cube, C meaning CURVE, S meaning straight. Start and end can be ommitted and are discarded if len(chain) === x^3
+    chain: String,
+}
+
 #[derive(Subcommand, Clone, Debug)]
 pub enum Command {
     Generate(Generate),
-    Solve
+    Solve(Solve)
 }
 
 #[derive(Parser)]
@@ -91,11 +94,12 @@ fn main() {
 
     match &args.command {
         Command::Generate(g) => generate(g.clone()),
-        Command::Solve => todo!(),
+        Command::Solve(s) => solver::solve(s.clone()),
     }
 
    
 }
+
 
 fn generate(g: Generate) {
     if g.verbose {

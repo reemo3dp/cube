@@ -11,7 +11,8 @@ fn create_cube_rec(
     rng: &mut XorShiftRng,
     dim: u8,
 ) -> Option<IndexSet<Coord>> {
-    if chain.len() == (dim * dim * dim).into() {
+    let cap: u16 = dim.into();
+    if chain.len() == (cap * cap * cap).into() {
         return Some(chain.clone());
     }
     let current = chain.last().unwrap();
@@ -43,7 +44,8 @@ impl Algorithm for RandomizerEasier {
             let mut start: Coord = [0, 0, 0];
             start[rng.gen_range(0..2)] = rng.gen_range(0..dim);
 
-            let mut chain = IndexSet::with_capacity((dim * dim * dim).into());
+            let cap: u16 = dim.into();
+            let mut chain = IndexSet::with_capacity((cap * cap * cap).into());
             chain.insert(start);
 
             if let Some(result) = create_cube_rec(&mut chain, &mut rng, dim) {

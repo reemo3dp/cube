@@ -43,7 +43,7 @@ impl Algorithm for SuperRandom {
             start[r] = 0;
             start[(r + 1) % 3] = 0;
 
-            let mut chain = IndexSet::with_capacity((dim * dim * dim).try_into().unwrap());
+            let mut chain = IndexSet::with_capacity((dim * dim * dim).into());
             chain.insert(start);
 
 

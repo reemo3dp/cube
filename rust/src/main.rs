@@ -2,7 +2,7 @@
 extern crate lazy_static;
 
 use algorithm::Algorithm;
-use clap::{builder::PossibleValue, Parser, ValueEnum};
+use clap::{builder::PossibleValue, Parser, Subcommand, ValueEnum};
 use common::Coord;
 use crossbeam_channel::{unbounded, Sender};
 use dynamic_programming::DynamicProgramming;
@@ -15,7 +15,7 @@ use randomizer_easier::RandomizerEasier;
 use serde::Serialize;
 use std::{
     fmt,
-    io::{Write},
+    io::Write,
     sync::{
         atomic::{AtomicBool, AtomicU64},
         Arc,
@@ -47,45 +47,69 @@ enum AlgorithmArg {
     SuperRandom,
     DynamicProgramming,
 }
-#[derive(Parser, Clone)]
-#[command(version, about, long_about = None)]
-struct Args {
-    /// The algorithm to use for finding a solution
-    #[arg(short, long, value_enum, default_value_t = AlgorithmArg::RandomizerEasier)]
-    algorithm: AlgorithmArg,
 
-    /// Keep the program running or terminate after the first match
-    #[arg(short, long, default_value_t = false, group = "looping")]
-    r#loop: bool,
-
-    /// Print Performance Information on STDERR
-    #[arg(short, long, default_value_t = false)]
-    verbose: bool,
-
-    /// Seed
-    #[arg(short, long, group = "looping")]
-    seed: Option<String>,
-
-    /// Side length of the cube
-    dim: u8,
+#[derive(Parser, Clone, Debug)]
+pub struct Generate {
+            /// The algorithm to use for finding a solution
+            #[arg(short, long, value_enum, default_value_t = AlgorithmArg::RandomizerEasier)]
+            algorithm: AlgorithmArg,
+    
+            /// Keep the program running or terminate after the first match
+            #[arg(short, long, default_value_t = false, group = "looping")]
+            r#loop: bool,
+    
+            /// Print Performance Information on STDERR
+            #[arg(short, long, default_value_t = false)]
+            verbose: bool,
+    
+            /// Seed
+            #[arg(short, long, group = "looping")]
+            seed: Option<String>,
+    
+            /// Side length of the cube
+            dim: u8,
+    
 }
+
+#[derive(Subcommand, Clone, Debug)]
+pub enum Command {
+    Generate(Generate),
+    Solve
+}
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+pub struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
+
 
 fn main() {
     initialize(&STARTED_AT);
-    let args = Args::parse();
+    let args = Cli::parse();
 
-    if args.verbose {
+    match &args.command {
+        Command::Generate(g) => generate(g.clone()),
+        Command::Solve => todo!(),
+    }
+
+   
+}
+
+fn generate(g: Generate) {
+    if g.verbose {
         PRINT_DEBUG_EVERY_N_FAILURES.store(1000000, std::sync::atomic::Ordering::Relaxed);
     }
 
     let (s, r) = unbounded::<Result>();
 
     let num_of_threads = available_parallelism().unwrap().into();
-    if args.verbose {
+    if g.verbose {
         eprintln!("//D Launching {} threads", num_of_threads);
     }
     for _ in 0..num_of_threads {
-        let cp = args.clone();
+        let cp = g.clone();
         let sender = s.clone();
         spawn(move || {
             run(cp, sender);
@@ -97,7 +121,7 @@ fn main() {
             Ok(r) => {
                 let _ = std::io::stderr().flush();
                 println!("{}", r);
-                if !args.r#loop {
+                if !g.r#loop {
                     return;
                 }
             }
@@ -125,8 +149,8 @@ impl fmt::Display for Result {
     }
 }
 
-fn run(args: Args, sender: Sender<Result>) {
-    let algo: Box<dyn Algorithm + Send + Sync> = match args.algorithm {
+fn run(g: Generate, sender: Sender<Result>) {
+    let algo: Box<dyn Algorithm + Send + Sync> = match g.algorithm {
         AlgorithmArg::RandomizerEasier => Box::new(RandomizerEasier {}),
         AlgorithmArg::Randomizer => Box::new(Randomizer {}),
         AlgorithmArg::SuperRandom => Box::new(SuperRandom {}),
@@ -136,7 +160,7 @@ fn run(args: Args, sender: Sender<Result>) {
 
     let mut last_start = *STARTED_AT;
     loop {
-        let seed_string: String = args.seed.clone().unwrap_or_else(|| {
+        let seed_string: String = g.seed.clone().unwrap_or_else(|| {
             thread_rng()
                 .sample_iter(&Alphanumeric)
                 .take(10)
@@ -146,18 +170,18 @@ fn run(args: Args, sender: Sender<Result>) {
 
         let seed: <XorShiftRng as SeedableRng>::Seed =
             Seeder::from(seed_string.clone()).make_seed();
-        if let Some(cube) = algo.run(seed, args.dim) {
+        if let Some(cube) = algo.run(seed, g.dim) {
             match sender.send(Result {
                 seed: seed_string.clone(),
-                algorithm: args.algorithm.to_possible_value().unwrap(),
-                dim: args.dim,
+                algorithm: g.algorithm.to_possible_value().unwrap(),
+                dim: g.dim,
                 elapsed: last_start.elapsed(),
                 path: cube.clone(),
             }) {
                 Ok(_) => {}
                 Err(_) => return,
             }
-            if !args.r#loop {
+            if !g.r#loop {
                 break;
             };
             last_start = Instant::now();

@@ -1,4 +1,4 @@
-include<data_3_difficult.scad>;
+include<cubes/data_3_difficult.scad>;
 
 $fn = 100;
 
@@ -11,7 +11,7 @@ NUB_DIAM = HOLE_DIAM+4;
 NUB_DEPTH = SIZE/5;
 NUB_FUDGE_FACTOR = 1.01;
 PIN_DIAM = NUB_DIAM;
-PIN_FUDGE = 0.1;
+PIN_FUDGE = 0.01;
 CHAMFER_WIDTH = 2;
 
 CONNECTOR_EDGE = 0;
@@ -191,7 +191,13 @@ rotate([0, 90, 0]) union() {
 
 module male_connector() {
     difference() {
-        cylinder(h = NUB_DEPTH, d2 = NUB_DIAM, d1 = NUB_DIAM+CONNECTOR_EDGE, center = true);
+        union() {
+            cylinder(h = NUB_DEPTH, d2 = NUB_DIAM, d1 = NUB_DIAM+CONNECTOR_EDGE, center = true);
+            rotate([0, 0, 45]) translate([0, 0, (NUB_DEPTH)/2-0.6]) { 
+                cube([SIZE*0.8, 1.6, 1.2], center = true);
+                cube([1.6, SIZE*0.8, 1.2], center = true);
+            }            
+        }
         cylinder(h = NUB_DEPTH, d = HOLE_DIAM, center = true);
         cube([CONNECTOR_GAP, NUB_DIAM+CONNECTOR_EDGE, NUB_DEPTH], center= true);
         cube([NUB_DIAM+CONNECTOR_EDGE, CONNECTOR_GAP, NUB_DEPTH], center= true);
@@ -200,6 +206,11 @@ module male_connector() {
 
 module female_connector() {
     cylinder(h = NUB_DEPTH, d2 = NUB_FUDGE_FACTOR*NUB_DIAM, d1 = NUB_FUDGE_FACTOR*(NUB_DIAM+CONNECTOR_EDGE), center = true);
+    rotate([0, 0, 45]) translate([0, 0, (NUB_DEPTH)/2-0.6]) { 
+        cube([SIZE*0.8, 1.8, 1.4], center = true);
+        cube([1.8, SIZE*0.8, 1.4], center = true);
+    }
+
 }
 
 module curved_piece() {
@@ -233,24 +244,39 @@ module start_piece() {
             base_cube();
             translate([0, SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) scale([0.95, 0.95, 1]) male_connector();
         };
-        pin();
+        pin_cutout();
         translate([0, SIZE/2, 0]) rotate([90, 0, 0]) cylinder(d = HOLE_DIAM, h = SIZE, center = true);
     }
     scale([1, 1, 1]*(1-PIN_FUDGE)) pin();
-}
+}   
 
 module end_piece() {
     difference() {
         base_cube();
         translate([0, -SIZE/4, 0]) rotate([90, 0, 0]) cylinder(d = HOLE_DIAM, h = SIZE/2, center = true);
-        pin();
+        pin_cutout();
         translate([0, -SIZE/2+NUB_DEPTH/2, 0]) rotate([90, 0, 0]) female_connector();
     }
     scale([1, 1, 1]*(1-PIN_FUDGE)) pin();    
 }
 
 
-module pin() {
+module pin_cutout() {
     translate([SIZE*0.1, 0, 0]) rotate([0, 90, 0]) cylinder(h = SIZE*0.8, d = PIN_DIAM, center = true);
+}
+
+module pin() {
+    translate([SIZE*0.1, 0, 0]) rotate([0, 90, 0]) 
+        difference() {
+            union() {
+                difference() {
+                    cylinder(h = SIZE*0.8, d = PIN_DIAM, center = true);
+                    cylinder(h = SIZE*0.8/2, d = PIN_DIAM, center = true);
+                }
+                cylinder(h = SIZE*0.8/2, d1 = PIN_DIAM, d2 = PIN_DIAM*0.5, center = true);
+                cylinder(h = SIZE*0.8/2, d2 = PIN_DIAM, d1 = PIN_DIAM*0.5, center = true);
+            }
+            translate([0, PIN_DIAM/2, 0]) cube([SIZE*0.8, SIZE*0.1, SIZE*0.8], center= true);
+    }
 }
 

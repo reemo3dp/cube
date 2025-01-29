@@ -14,19 +14,23 @@ use randomizer::Randomizer;
 use randomizer_easier::RandomizerEasier;
 use serde::Serialize;
 use std::{
-    fmt, io::{Cursor, Write}, string, sync::{
+    fmt,
+    io::Write,
+    sync::{
         atomic::{AtomicBool, AtomicU64},
         Arc,
-    }, thread::{available_parallelism, sleep, spawn}, time::{Duration, Instant}
+    },
+    thread::{available_parallelism, sleep, spawn},
+    time::{Duration, Instant},
 };
 use super_random::SuperRandom;
 
-mod solver;
 mod algorithm;
 mod common;
 mod dynamic_programming;
 mod randomizer;
 mod randomizer_easier;
+mod solver;
 mod super_random;
 
 lazy_static! {
@@ -47,25 +51,24 @@ enum AlgorithmArg {
 
 #[derive(Parser, Clone, Debug)]
 pub struct Generate {
-            /// The algorithm to use for finding a solution
-            #[arg(short, long, value_enum, default_value_t = AlgorithmArg::RandomizerEasier)]
-            algorithm: AlgorithmArg,
-    
-            /// Keep the program running or terminate after the first match
-            #[arg(short, long, default_value_t = false, group = "looping")]
-            r#loop: bool,
-    
-            /// Print Performance Information on STDERR
-            #[arg(short, long, default_value_t = false)]
-            verbose: bool,
-    
-            /// Seed
-            #[arg(short, long, group = "looping")]
-            seed: Option<String>,
-    
-            /// Side length of the cube
-            dim: u8,
-    
+    /// The algorithm to use for finding a solution
+    #[arg(short, long, value_enum, default_value_t = AlgorithmArg::RandomizerEasier)]
+    algorithm: AlgorithmArg,
+
+    /// Keep the program running or terminate after the first match
+    #[arg(short, long, default_value_t = false, group = "looping")]
+    r#loop: bool,
+
+    /// Print Performance Information on STDERR
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool,
+
+    /// Seed
+    #[arg(short, long, group = "looping")]
+    seed: Option<String>,
+
+    /// Side length of the cube
+    dim: u8,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -77,7 +80,7 @@ pub struct Solve {
 #[derive(Subcommand, Clone, Debug)]
 pub enum Command {
     Generate(Generate),
-    Solve(Solve)
+    Solve(Solve),
 }
 
 #[derive(Parser)]
@@ -87,7 +90,6 @@ pub struct Cli {
     command: Command,
 }
 
-
 fn main() {
     initialize(&STARTED_AT);
     let args = Cli::parse();
@@ -96,10 +98,7 @@ fn main() {
         Command::Generate(g) => generate(g.clone()),
         Command::Solve(s) => solver::solve(s.clone()),
     }
-
-   
 }
-
 
 fn generate(g: Generate) {
     if g.verbose {
@@ -110,7 +109,7 @@ fn generate(g: Generate) {
 
     let num_of_threads = match g.seed {
         Some(_) => 1,
-        _ => available_parallelism().unwrap().into()
+        _ => available_parallelism().unwrap().into(),
     };
     if g.verbose {
         eprintln!("//D Launching {} threads", num_of_threads);
@@ -146,11 +145,68 @@ struct Result {
     path: Vec<Coord>,
 }
 
+fn sub_u3(a: [u8; 3], b: [u8; 3]) -> [i16; 3] {
+    let a_i: [i16; 3] = [a[0].into(), a[1].into(), a[2].into()];
+    let b_i: [i16; 3] = [b[0].into(), b[1].into(), b[2].into()];
+
+    [a_i[0] - b_i[0], a_i[1] - b_i[1], a_i[2] - b_i[2]]
+}
+
+fn mult_u3(a: [i16; 3], b: i16) -> [i16; 3] {
+    [a[0] * b, a[1] * b, a[2] * b]
+}
+
+impl Result {
+    fn format_path(&self) -> String {
+        let mut result = String::from("1_A_START ");
+        let mut dir_in = mult_u3(sub_u3(self.path[1], self.path[0]), -1);
+
+        for n in 1..self.path.len() - 1 {
+            let dir_out = sub_u3(self.path[n + 1], self.path[n]);
+            let t = if mult_u3(dir_out, 1) == mult_u3(dir_in, -1) {
+                "S"
+            } else {
+                "C"
+            };
+
+            let color = if (n + 1) % 2 == 1 { "A" } else { "B" };
+
+            result.push_str(&format!("{}_{}_{} ", n + 1, color, t).to_string());
+            dir_in = mult_u3(dir_out, -1);
+        }
+        let color = if (self.path.len() + 1) % 2 == 0 {
+            "A"
+        } else {
+            "B"
+        };
+        result.push_str(&format!("{}_{}_{}", self.path.len(), color, "END").to_string());
+        result
+    }
+    fn format_path_quick(&self) -> String {
+        let mut result = String::from("");
+        let mut dir_in = mult_u3(sub_u3(self.path[1], self.path[0]), -1);
+
+        for n in 1..self.path.len() - 1 {
+            let dir_out = sub_u3(self.path[n + 1], self.path[n]);
+            let t = if mult_u3(dir_out, 1) == mult_u3(dir_in, -1) {
+                "S"
+            } else {
+                "C"
+            };
+            result.push_str(t);
+            dir_in = mult_u3(dir_out, -1);
+        }
+        result
+    }
+}
+
 impl fmt::Display for Result {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "// Seed: {}", self.seed)?;
         writeln!(f, "// Randomizer: {}", self.algorithm.get_name())?;
         writeln!(f, "// Duration: {:?}", self.elapsed)?;
+        writeln!(f, "// Assembly: {}", self.format_path())?;
+        writeln!(f, "// Quick: {}", self.format_path_quick())?;
         writeln!(f, "DIM = {};", self.dim)?;
         writeln!(f, "PATH = {:?};", self.path)
     }

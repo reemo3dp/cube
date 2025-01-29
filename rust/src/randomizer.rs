@@ -20,13 +20,13 @@ fn create_cube_rec(
     neighbours.shuffle(rng);
 
     for neighbour in neighbours {
-        let mut nextChain = chain.clone();
-        if !nextChain.insert(neighbour) {
-            record_failure(nextChain.len());
+        let mut next_chain = chain.clone();
+        if !next_chain.insert(neighbour) {
+            record_failure(next_chain.len());
             continue;
         };
 
-        return create_cube_rec(nextChain, rng, dim);
+        return create_cube_rec(next_chain, rng, dim);
     }
     None
 }

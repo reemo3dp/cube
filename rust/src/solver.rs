@@ -1,10 +1,5 @@
 use core::panic;
-use std::{
-    collections::HashSet,
-    f32::consts::PI,
-    fmt::{format, Display, Pointer},
-    ops::{Add, Index, Not, Sub},
-};
+use std::ops::{Add, Not, Sub};
 
 use indexmap::IndexSet;
 
@@ -43,18 +38,6 @@ impl Not for Direction {
 }
 
 impl Direction {
-    fn project_position(&self, other: Vector3d) -> Vector3d {
-        match self {
-            Direction::Forward => other,
-
-            Direction::Left => other.rotate_z(-90),
-            Direction::Up => other.rotate_x(-90),
-            Direction::Right => other.rotate_z(90),
-            Direction::Down => other.rotate_x(90),
-            Direction::Backward => other.rotate_x(180),
-        }
-    }
-
     fn normal(&self) -> Vector3d {
         match self {
             Direction::Left => Vector3d(-1, 0, 0),
@@ -115,35 +98,6 @@ impl Vector3d {
             std::cmp::max(self.0, other.0),
             std::cmp::max(self.1, other.1),
             std::cmp::max(self.2, other.2),
-        )
-    }
-
-    // https://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
-    fn rotate_z(self, degree: i16) -> Vector3d {
-        Vector3d(
-            (((self.0 as f32) * f32::cos((degree as f32) * PI / 180.0))
-                - ((self.1 as f32) * f32::sin((degree as f32) * PI / 180.0))) as i8,
-            (((self.0 as f32) * f32::sin((degree as f32) * PI / 180.0))
-                + ((self.1 as f32) * f32::cos((degree as f32) * PI / 180.0))) as i8,
-            self.2,
-        )
-    }
-    fn rotate_y(self, degree: i16) -> Vector3d {
-        Vector3d(
-            (((self.0 as f32) * f32::cos((degree as f32) * PI / 180.0))
-                + ((self.2 as f32) * f32::sin((degree as f32) * PI / 180.0))) as i8,
-            self.1,
-            -(((self.0 as f32) * f32::sin((degree as f32) * PI / 180.0))
-                + ((self.2 as f32) * f32::cos((degree as f32) * PI / 180.0))) as i8,
-        )
-    }
-    fn rotate_x(self, degree: i16) -> Vector3d {
-        Vector3d(
-            self.0,
-            (((self.1 as f32) * f32::cos((degree as f32) * PI / 180.0))
-                - ((self.2 as f32) * f32::sin((degree as f32) * PI / 180.0))) as i8,
-            (((self.1 as f32) * f32::sin((degree as f32) * PI / 180.0))
-                + ((self.2 as f32) * f32::cos((degree as f32) * PI / 180.0))) as i8,
         )
     }
 }

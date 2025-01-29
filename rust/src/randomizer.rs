@@ -7,7 +7,7 @@ use rand::prelude::*;
 use rand_xorshift::XorShiftRng;
 
 fn create_cube_rec(
-    chain: &mut IndexSet<Coord>,
+    chain: IndexSet<Coord>,
     rng: &mut XorShiftRng,
     dim: u8,
 ) -> Option<IndexSet<Coord>> {
@@ -20,12 +20,13 @@ fn create_cube_rec(
     neighbours.shuffle(rng);
 
     for neighbour in neighbours {
-        if !chain.insert(neighbour) {
-            record_failure(chain.len());
+        let mut nextChain = chain.clone();
+        if !nextChain.insert(neighbour) {
+            record_failure(nextChain.len());
             continue;
         };
 
-        return create_cube_rec(chain, rng, dim);
+        return create_cube_rec(nextChain, rng, dim);
     }
     None
 }
@@ -42,7 +43,7 @@ impl Algorithm for Randomizer {
             let mut chain = IndexSet::with_capacity((dim * dim * dim).into());
             chain.insert(start);
 
-            if let Some(result) = create_cube_rec(&mut chain, &mut rng, dim) {
+            if let Some(result) = create_cube_rec(chain, &mut rng, dim) {
                 return Some(result.into_iter().collect());
             }
         }

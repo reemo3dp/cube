@@ -1,9 +1,12 @@
+use ahash::{AHasher, RandomState};
 use core::panic;
 use std::{
-    ops::{Add, Not, Sub},
+    ops::Not,
     sync::{atomic::AtomicU64, Arc},
     time::Instant,
 };
+
+use crate::vector3d::Vector3d;
 
 use indexmap::IndexSet;
 use lazy_static::initialize;
@@ -67,12 +70,12 @@ impl Not for Direction {
 impl Direction {
     fn normal(&self) -> Vector3d {
         match self {
-            Direction::Left => Vector3d(-1, 0, 0),
-            Direction::Up => Vector3d(0, 0, 1),
-            Direction::Right => Vector3d(1, 0, 0),
-            Direction::Down => Vector3d(0, 0, -1),
-            Direction::Forward => Vector3d(0, 1, 0),
-            Direction::Backward => Vector3d(0, -1, 0),
+            Direction::Left => Vector3d { x: -1, y: 0, z: 0 },
+            Direction::Up => Vector3d { x: 0, y: 0, z: 1 },
+            Direction::Right => Vector3d { x: 1, y: 0, z: 0 },
+            Direction::Down => Vector3d { x: 0, y: 0, z: -1 },
+            Direction::Forward => Vector3d { x: 0, y: 1, z: 0 },
+            Direction::Backward => Vector3d { x: 0, y: -1, z: 0 },
         }
     }
 
@@ -110,77 +113,33 @@ struct PieceInPosition {
     piece: Piece,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
-struct Vector3d(i8, i8, i8);
-impl Vector3d {
-    fn min(self, other: Vector3d) -> Vector3d {
-        Vector3d(
-            std::cmp::min(self.0, other.0),
-            std::cmp::min(self.1, other.1),
-            std::cmp::min(self.2, other.2),
-        )
-    }
-    fn max(self, other: Vector3d) -> Vector3d {
-        Vector3d(
-            std::cmp::max(self.0, other.0),
-            std::cmp::max(self.1, other.1),
-            std::cmp::max(self.2, other.2),
-        )
-    }
-}
-
-impl Sub<Vector3d> for Vector3d {
-    type Output = Vector3d;
-
-    fn sub(self, rhs: Vector3d) -> Self::Output {
-        Vector3d(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
-    }
-}
-
-impl Add<(i8, i8, i8)> for Vector3d {
-    type Output = Vector3d;
-
-    fn add(self, rhs: (i8, i8, i8)) -> Self::Output {
-        Vector3d(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
-    }
-}
-
-impl Add<Vector3d> for Vector3d {
-    type Output = Vector3d;
-
-    fn add(self, rhs: Vector3d) -> Self::Output {
-        Vector3d(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
-    }
-}
-
 impl PieceInPosition {
     fn all_next_positions(&self, piece: Piece) -> Vec<PieceInPosition> {
         if piece == Piece::Straight {
-            return Vec::from([PieceInPosition {
+            return [PieceInPosition {
                 facing_direction: self.facing_direction,
                 position: self.position + self.facing_direction.normal(),
                 piece,
-            }]);
+            }]
+            .to_vec();
         }
 
-        let mut result = Vec::new();
-        for n in [
+        [
             Direction::Left,
             Direction::Up,
             Direction::Right,
             Direction::Down,
-        ] {
-            result.push(PieceInPosition {
-                facing_direction: self.facing_direction.project_direction(n),
-                position: self.position + self.facing_direction.normal(),
-                piece,
-            });
-        }
-        result
+        ]
+        .map(|n| PieceInPosition {
+            facing_direction: self.facing_direction.project_direction(n),
+            position: self.position + self.facing_direction.normal(),
+            piece,
+        })
+        .to_vec()
     }
 }
 
-fn print_chain(c: IndexSet<PieceInPosition>) {
+fn print_chain(c: Vec<PieceInPosition>) {
     for (i, s) in c.iter().enumerate() {
         println!(
             "{}, Piece: {:?}, Position: {:?}, Direction: {:?}",
@@ -218,18 +177,19 @@ pub fn solve(solve: Solve) {
         panic!("Provided String does not form a cube: {}", pieces.len());
     }
 
-    let mut chain = IndexSet::new();
-    chain.insert(PieceInPosition {
+    let mut chain = Vec::with_capacity((dim * dim * dim).try_into().unwrap());
+
+    chain.push(PieceInPosition {
         piece: Piece::Start,
-        position: Vector3d(0, 0, 0),
+        position: Vector3d { x: 0, y: 0, z: 0 },
         facing_direction: Direction::Forward,
     });
 
     if let Some(solution) = solve_rec(
         chain,
-        pieces.clone()[1..].to_vec(),
-        Vector3d(0, 0, 0),
-        Vector3d(0, 0, 0),
+        &pieces.clone()[1..],
+        Vector3d { x: 0, y: 0, z: 0 },
+        Vector3d { x: 0, y: 0, z: 0 },
         dim,
     ) {
         print_chain(solution);
@@ -237,48 +197,51 @@ pub fn solve(solve: Solve) {
 }
 
 fn solve_rec(
-    pieces_in_position: IndexSet<PieceInPosition>,
-    rest: Vec<Piece>,
+    pieces_in_position: Vec<PieceInPosition>,
+    rest: &[Piece],
     current_min: Vector3d,
     current_max: Vector3d,
     dim: i8,
-) -> Option<IndexSet<PieceInPosition>> {
-    let spread = rest.split_first();
-
-    if spread.is_none() {
-        if (current_max - current_min) == Vector3d(dim-1, dim-1, dim-1) {
+) -> Option<Vec<PieceInPosition>> {
+    if pieces_in_position.len() == (dim * dim * dim).try_into().unwrap() {
+        if (current_max - current_min)
+            == (Vector3d {
+                x: dim - 1,
+                y: dim - 1,
+                z: dim - 1,
+            })
+        {
             return Some(pieces_in_position);
         }
         record_failure(pieces_in_position.len());
-        return None
+        return None;
     }
-    let (next, new_rest) = spread.unwrap();
 
-    let binding = pieces_in_position.last().unwrap().all_next_positions(*next);
+    let next = rest[0];
+
+    let binding: Vec<PieceInPosition> = pieces_in_position.last().unwrap().all_next_positions(next);
 
     let all_next_positions = binding
         .iter()
         .filter(|x| !pieces_in_position.iter().any(|p| p.position == x.position));
 
     for next_position in all_next_positions {
-        let mut next_pieces = pieces_in_position.clone();
-        if !next_pieces.insert(*next_position) {
-            continue;
-        }
-
         let next_min = current_min.min(next_position.position);
         let next_max = current_max.max(next_position.position);
         let diff = next_max - next_min;
-        if diff.0 >= dim || diff.1 >= dim || diff.2 >= dim {
+        if diff.x >= dim || diff.y >= dim || diff.z >= dim {
+            record_failure(pieces_in_position.len());
             continue;
         }
 
-        let result = solve_rec(next_pieces, new_rest.to_vec(), next_min, next_max, dim);
+        let mut next_pieces = pieces_in_position.clone();
+        next_pieces.push(*next_position);
+
+        let result = solve_rec(next_pieces, &rest[1..], next_min, next_max, dim);
         if result.is_some() {
             return result;
         }
     }
-    record_failure(pieces_in_position.len());
     None
 }
 
@@ -289,7 +252,7 @@ mod tests {
     #[test]
     fn test_next_elements() {
         let piece = PieceInPosition {
-            position: Vector3d(0, 0, 0),
+            position: Vector3d { x: 0, y: 0, z: 0 },
             facing_direction: Direction::Up,
             piece: Piece::Straight,
         };
@@ -298,7 +261,7 @@ mod tests {
             Vec::from_iter(piece.all_next_positions(Piece::Straight).iter()),
             Vec::from_iter(
                 [PieceInPosition {
-                    position: Vector3d(0, 0, 1),
+                    position: Vector3d { x: 0, y: 0, z: 1 },
                     facing_direction: Direction::Up,
                     piece: Piece::Straight
                 }]
@@ -310,7 +273,7 @@ mod tests {
     #[test]
     fn test_next_elements_curve() {
         let piece = PieceInPosition {
-            position: Vector3d(0, 0, 0),
+            position: Vector3d { x: 0, y: 0, z: 0 },
             facing_direction: Direction::Up,
             piece: Piece::Straight,
         };
@@ -319,22 +282,22 @@ mod tests {
             piece.all_next_positions(Piece::Curve),
             Vec::from([
                 PieceInPosition {
-                    position: Vector3d(0, 0, 1),
+                    position: Vector3d { x: 0, y: 0, z: 1 },
                     facing_direction: Direction::Left,
                     piece: Piece::Curve
                 },
                 PieceInPosition {
-                    position: Vector3d(0, 0, 1),
+                    position: Vector3d { x: 0, y: 0, z: 1 },
                     facing_direction: Direction::Backward,
                     piece: Piece::Curve
                 },
                 PieceInPosition {
-                    position: Vector3d(0, 0, 1),
+                    position: Vector3d { x: 0, y: 0, z: 1 },
                     facing_direction: Direction::Right,
                     piece: Piece::Curve
                 },
                 PieceInPosition {
-                    position: Vector3d(0, 0, 1),
+                    position: Vector3d { x: 0, y: 0, z: 1 },
                     facing_direction: Direction::Forward,
                     piece: Piece::Curve
                 }

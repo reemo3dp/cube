@@ -5,6 +5,7 @@ use clap::{Parser, Subcommand};
 
 mod generate;
 mod solver;
+mod vector3d;
 
 #[derive(Parser, Clone, Debug)]
 pub struct Solve {

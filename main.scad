@@ -1,8 +1,8 @@
-include<cubes/eike.scad>;
+include<cubes/EIKE_3.scad>;
 
 $fn = 100;
 
-PUZZLE_SIZE = 25*3;
+PUZZLE_SIZE = 20*3;
 
 SIZE=PUZZLE_SIZE/DIM;
 EXPLODE=10;
@@ -18,7 +18,7 @@ CONNECTOR_EDGE = 0;
 CONNECTOR_GAP = 0;
 
 PARTIAL=true;
-FIRST_OR_SECOND=0;
+FIRST_OR_SECOND=1;
 
 
 

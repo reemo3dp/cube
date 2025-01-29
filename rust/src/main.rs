@@ -108,7 +108,10 @@ fn generate(g: Generate) {
 
     let (s, r) = unbounded::<Result>();
 
-    let num_of_threads = available_parallelism().unwrap().into();
+    let num_of_threads = match g.seed {
+        Some(_) => 1,
+        _ => available_parallelism().unwrap().into()
+    };
     if g.verbose {
         eprintln!("//D Launching {} threads", num_of_threads);
     }

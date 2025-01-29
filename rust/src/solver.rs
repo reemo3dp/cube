@@ -1,9 +1,20 @@
 use core::panic;
-use std::ops::{Add, Not, Sub};
+use std::{
+    ops::{Add, Not, Sub},
+    sync::{atomic::AtomicU64, Arc},
+    time::Instant,
+};
 
 use indexmap::IndexSet;
+use lazy_static::initialize;
 
 use crate::Solve;
+
+lazy_static! {
+    pub static ref STARTED_AT: Instant = Instant::now();
+    pub static ref NUM_SOLUTIONS_TRIED: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
+    pub static ref PRINT_DEBUG_EVERY_N_FAILURES: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
+}
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Piece {
@@ -22,6 +33,22 @@ enum Direction {
     Forward,
     Backward,
 }
+
+pub fn record_failure(chain_len: usize) {
+    let num_tried = NUM_SOLUTIONS_TRIED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let print_every = PRINT_DEBUG_EVERY_N_FAILURES.load(std::sync::atomic::Ordering::Relaxed);
+    if print_every > 0 && num_tried % print_every == 0 {
+        eprint!("\r");
+        eprint!(
+            "//D Last chain: {:3}, {:10.3} chains/ms for {:6}s (tried {:6} chains)",
+            chain_len,
+            num_tried as f64 / (crate::generate::STARTED_AT.elapsed().as_millis() as f64),
+            crate::generate::STARTED_AT.elapsed().as_secs(),
+            num_tried
+        );
+    }
+}
+
 impl Not for Direction {
     type Output = Self;
 
@@ -166,6 +193,11 @@ fn print_chain(c: IndexSet<PieceInPosition>) {
 }
 
 pub fn solve(solve: Solve) {
+    initialize(&STARTED_AT);
+    if solve.verbose {
+        PRINT_DEBUG_EVERY_N_FAILURES.store(1000000, std::sync::atomic::Ordering::Relaxed);
+    }
+
     let mut pieces: Vec<_> = solve
         .chain
         .to_lowercase()
@@ -201,7 +233,6 @@ pub fn solve(solve: Solve) {
         dim,
     ) {
         print_chain(solution);
-        return;
     }
 }
 
@@ -215,11 +246,11 @@ fn solve_rec(
     let spread = rest.split_first();
 
     if spread.is_none() {
-        if (current_max - current_min) == Vector3d(dim, dim, dim) {
+        if (current_max - current_min) == Vector3d(dim-1, dim-1, dim-1) {
             return Some(pieces_in_position);
         }
-        return Some(pieces_in_position);
-        //return None;
+        record_failure(pieces_in_position.len());
+        return None
     }
     let (next, new_rest) = spread.unwrap();
 
@@ -247,6 +278,7 @@ fn solve_rec(
             return result;
         }
     }
+    record_failure(pieces_in_position.len());
     None
 }
 

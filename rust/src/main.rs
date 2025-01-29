@@ -10,6 +10,10 @@ mod solver;
 pub struct Solve {
     /// A string of characters describing the cube, C meaning CURVE, S meaning straight. Start and end can be ommitted and are discarded if len(chain) === x^3
     chain: String,
+    
+    /// Print Performance Information on STDERR
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool,
 }
 
 #[derive(Subcommand, Clone, Debug)]

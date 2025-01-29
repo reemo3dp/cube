@@ -1,24 +1,24 @@
-include<cubes/data_3_difficult.scad>;
+include<cubes/eike.scad>;
 
 $fn = 100;
 
-PUZZLE_SIZE = 20*3;
+PUZZLE_SIZE = 25*3;
 
 SIZE=PUZZLE_SIZE/DIM;
 EXPLODE=10;
-HOLE_DIAM = 4;
+HOLE_DIAM = 5;
 NUB_DIAM = HOLE_DIAM+4;
 NUB_DEPTH = SIZE/5;
 NUB_FUDGE_FACTOR = 1.01;
 PIN_DIAM = NUB_DIAM;
 PIN_FUDGE = 0.01;
-CHAMFER_WIDTH = 2;
+CHAMFER_WIDTH = 1;
 
 CONNECTOR_EDGE = 0;
 CONNECTOR_GAP = 0;
 
-PARTIAL=false;
-FIRST_OR_SECOND=1;
+PARTIAL=true;
+FIRST_OR_SECOND=0;
 
 
 
@@ -81,10 +81,13 @@ module puzzle(path) {
 module puzzle_rec(in, current, rest) {
     out = len(rest) > 0 ? rest[0] - current : undef;
     index = DIM*DIM*DIM-len(rest);
-    echo(index, in, out, index %2 == 1 ? "A" : "B",  !in ? "START" : !out ? "END" : in*-1 == out ? "STRAIGHT" : "CURVE");
+    //echo(index, in, out, to_str(out), index %2 == 1 ? "A" : "B",  !in ? "START" : !out ? "END" : in*-1 == out ? "STRAIGHT" : "CURVE");
+    echo(index, index % 2 == 1 ? "Color A" : "Color B",  !in ? "START" : !out ? "END" : in*-1 == out ? "STRAIGHT" : "CURVE");
 
-    color(alpha=0.8,c = [0.5, 0.5, 0.5]+[0.5,0,0]*index/(DIM*DIM*DIM)) translate(current*SIZE*(1+EXPLODE/SIZE)) 
-        whole_piece(in, out);
+    if(!PARTIAL || index % 2 == FIRST_OR_SECOND) {
+        color(alpha=0.8,c = [0.5, 0.5, 0.5]+[0.5,0,0]*index/(DIM*DIM*DIM)) translate(current*SIZE*(1+EXPLODE/SIZE)) 
+            whole_piece(in, out);
+    }
     
     if(len(rest) > 0) {
         puzzle_rec(out*-1, rest[0], tail(rest));

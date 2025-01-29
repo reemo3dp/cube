@@ -1,4 +1,3 @@
-use ahash::{AHasher, RandomState};
 use core::panic;
 use std::{
     ops::Not,
@@ -8,7 +7,6 @@ use std::{
 
 use crate::vector3d::Vector3d;
 
-use indexmap::IndexSet;
 use lazy_static::initialize;
 
 use crate::Solve;

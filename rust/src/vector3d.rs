@@ -1,4 +1,4 @@
-use std::{collections::HashSet, ops::{Add, Sub}};
+use std::ops::{Add, Sub};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Vector3d {

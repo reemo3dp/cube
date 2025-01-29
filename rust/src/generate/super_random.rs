@@ -1,7 +1,7 @@
-use crate::algorithm::Algorithm;
-use crate::common::get_neighbours;
-use crate::common::record_failure;
-use crate::common::Coord;
+use super::algorithm::Algorithm;
+use super::common::get_neighbours;
+use super::common::record_failure;
+use super::common::Coord;
 use indexmap::IndexSet;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;

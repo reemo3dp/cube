@@ -1,4 +1,4 @@
-use crate::{NUM_SOLUTIONS_TRIED, PRINT_DEBUG_EVERY_N_FAILURES, SHOULD_STOP};
+use crate::generate::{NUM_SOLUTIONS_TRIED, PRINT_DEBUG_EVERY_N_FAILURES, SHOULD_STOP};
 
 pub type Coord = [u8; 3];
 pub const VALID_NEIGHBOURS: [[i8; 3]; 6] = [
@@ -21,8 +21,8 @@ pub fn record_failure(chain_len: usize) {
         eprint!(
             "//D Last chain: {:3}, {:10.3} chains/ms for {:6}s (tried {:6} chains)",
             chain_len,
-            num_tried as f64 / (crate::STARTED_AT.elapsed().as_millis() as f64),
-            crate::STARTED_AT.elapsed().as_secs(),
+            num_tried as f64 / (crate::generate::STARTED_AT.elapsed().as_millis() as f64),
+            crate::generate::STARTED_AT.elapsed().as_secs(),
             format_number(num_tried)
         );
     }

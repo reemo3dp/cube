@@ -1,5 +1,4 @@
-//D Launching 24 threads
-//D Last chain:   3,      0.000 chains/ms for      1s (tried 0      chains)// Seed: 7axp6B0uAa
+// Seed: 7axp6B0uAa
 // Randomizer: randomizer
 // Duration: 1.000466401s
 DIM = 3;

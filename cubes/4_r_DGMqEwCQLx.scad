@@ -1,5 +1,4 @@
-//D Launching 24 threads
-//D Last chain:   2,      0.000 chains/ms for      1s (tried 0      chains)//D Last chain:  42,    952.381 chains/ms for      1s (tried 1K     chains)// Seed: DGMqEwCQLx
+// Seed: DGMqEwCQLx
 // Randomizer: randomizer
 // Duration: 1.056363013s
 DIM = 4;

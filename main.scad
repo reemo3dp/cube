@@ -17,48 +17,10 @@ CHAMFER_WIDTH = 1;
 CONNECTOR_EDGE = 0;
 CONNECTOR_GAP = 0;
 
-PARTIAL=true;
-FIRST_OR_SECOND=1;
+COLORS = ["purple", "black"];
 
-
-
-//whole_piece([0, 1, 0], [0, -1, 0]);
-//translate([30, 0, 0]) whole_piece([0, 1, 0], [0, 0, 1]);
-//translate([60, 0, 0]) whole_piece([-1, 0, 0], [1, 0, 0]);;
-//translate([90, 0, 0]) whole_piece([-1, 0, 0]*-1, [1, 0, 0]*-1);
-
-
-//DOWN-> BACK
-//translate([ 0, 30, 0]) whole_piece([0, 0, -1], [0, 1, 0]);
-//translate([ 30, 30, 0]) whole_piece([0, 1, 0], [0, 0, -1]);
-
-//UP -> FRONT
-//translate([0, 30, 0]) whole_piece([0, 0, -1]*-1, [0, 1, 0]*-1);
-//translate([30, 30, 0]) whole_piece([0, 1, 0]*-1, [0, 0, -1]*-1);
-
-//RIGHT -> DOWN
-//translate([0, 30, 0]) whole_piece([1, 0, 0], [0, 0, -1]);
-//translate([30, 30, 0]) whole_piece([0, 0, -1], [1, 0, 0]);
-
-////LEFT-> UP
-//translate([0, 30, 0]) whole_piece([1, 0, 0]*-1, [0, 0, -1]*-1);
-//translate([30, 30, 0]) whole_piece([0, 0, -1]*-1, [1, 0, 0]*-1);
-
-//LEFT-> DOWN
-//translate([0, 30, 0]) whole_piece([-1, 0, 0], [0, 0, -1]);
-//translate([30, 30, 0]) whole_piece([0, 0, -1], [-1, 0, 0]);
-
-//translate([ 0, 30, 0]) whole_piece([-1, 0, 0], [1, 0, 0]);
-//translate([30, 30, 0]) whole_piece([1, 0, 0], [-1, 0, 0]);
-//translate([60, 30, 0]) whole_piece([0, -1, 0], [0, 1, 0]);
-//translate([90, 30, 0]) whole_piece([0, 1, 0], [0, -1, 0]);
-//translate([120, 30, 0]) whole_piece([0, 0, -1], [0, 0, 1]);
-//translate([150, 30, 0]) whole_piece([0, 0,  1], [0, 0, -1]);
-
-puzzle(PATH);
-//translate([150, 150, 0]) whole_piece([0, -1, 0], [0, 0, 1]);
-//start_piece();
-
+puzzle(PATH, 0);
+puzzle(PATH, 1);
 
 module whole_piece(in, out) {
     piece(in, out);
@@ -70,30 +32,29 @@ function to_str(d) =
             d[1] == -1 ? "FRONT" :
                 d[1] == 1 ? "BACK" :
                     d[2] == -1 ? "DOWN" :
-                        d[2] == 1 ? "UP" : "ILLEGAL";
+                        d[2] == 1 ? "UP" : never();
 
 
                         
-module puzzle(path) {
-    puzzle_rec(undef, path[0], tail(path));
+module puzzle(path, only) {
+    puzzle_rec(undef, path[0], tail(path), only);
 }
 
-module puzzle_rec(in, current, rest) {
+module puzzle_rec(in, current, rest, only) {
     out = len(rest) > 0 ? rest[0] - current : undef;
     index = DIM*DIM*DIM-len(rest);
-    //echo(index, in, out, to_str(out), index %2 == 1 ? "A" : "B",  !in ? "START" : !out ? "END" : in*-1 == out ? "STRAIGHT" : "CURVE");
-    echo(index, index % 2 == 1 ? "Color A" : "Color B",  !in ? "START" : !out ? "END" : in*-1 == out ? "STRAIGHT" : "CURVE");
 
-    if(!PARTIAL || index % 2 == FIRST_OR_SECOND) {
-        color(alpha=0.8,c = [0.5, 0.5, 0.5]+[0.5,0,0]*index/(DIM*DIM*DIM)) translate(current*SIZE*(1+EXPLODE/SIZE)) 
+    if(index % 2 == only) {
+        color(alpha=0.95,c = COLORS[index % 2]) translate(current*SIZE*(1+EXPLODE/SIZE)) 
             whole_piece(in, out);
     }
     
     if(len(rest) > 0) {
-        puzzle_rec(out*-1, rest[0], tail(rest));
+        puzzle_rec(out*-1, rest[0], tail(rest), only);
     }
 }
 
+function never() = assert(false);
 
 
 module piece(in, out) {
@@ -162,12 +123,7 @@ module piece(in, out) {
     }
 }
 
-
-
-
 function tail(xs) = len(xs) > 1 ? [ for (i = [1:len(xs)-1]) xs[i] ] : [];
-
-// Pieces
 
 module base_cube() {
     difference() {
@@ -196,9 +152,9 @@ module male_connector() {
     difference() {
         union() {
             cylinder(h = NUB_DEPTH, d2 = NUB_DIAM, d1 = NUB_DIAM+CONNECTOR_EDGE, center = true);
-            rotate([0, 0, 45]) translate([0, 0, (NUB_DEPTH)/2-0.6]) { 
-                cube([SIZE*0.8, 1.6, 1.2], center = true);
-                cube([1.6, SIZE*0.8, 1.2], center = true);
+            rotate([0, 0, 45]) translate([0, 0, (NUB_DEPTH)/2-0.5]) { 
+                cube([SIZE*0.8, 1.2, 1], center = true);
+                cube([1.2, SIZE*0.8, 1], center = true);
             }            
         }
         cylinder(h = NUB_DEPTH, d = HOLE_DIAM, center = true);

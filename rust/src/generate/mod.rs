@@ -48,7 +48,7 @@ enum AlgorithmArg {
 #[derive(Parser, Clone, Debug)]
 pub struct Generate {
     /// The algorithm to use for finding a solution
-    #[arg(short, long, value_enum, default_value_t = AlgorithmArg::RandomizerEasier)]
+    #[arg(short, long, value_enum, default_value_t = AlgorithmArg::Randomizer)]
     algorithm: AlgorithmArg,
 
     /// Keep the program running or terminate after the first match
@@ -170,11 +170,12 @@ impl Result {
 
 impl fmt::Display for Result {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "// Seed: {}", self.seed)?;
+        writeln!(f, "// Version: {}", env!("CARGO_PKG_VERSION"))?;
         writeln!(f, "// Randomizer: {}", self.algorithm.get_name())?;
         writeln!(f, "// Duration: {:?}", self.elapsed)?;
         writeln!(f, "// Assembly: {}", self.format_path())?;
         writeln!(f, "// Quick: {}", self.format_path_quick())?;
+        writeln!(f, "SEED = \"{}\";", self.seed)?;
         writeln!(f, "DIM = {};", self.dim)?;
         writeln!(f, "PATH = {:?};", self.path)
     }

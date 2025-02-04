@@ -1,5 +1,3 @@
-include<cubes/data_3_difficult.scad>;
-
 $fn = 100;
 
 PUZZLE_SIZE = 20*3;

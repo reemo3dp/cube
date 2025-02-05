@@ -18,8 +18,8 @@ output/%.3mf: cubes/%.scad
 	$(OPENSCAD) \
 		--enable lazy-union \
 		--backend Manifold \
-		-o $@ \
-		-o $(patsubst %.3mf,%.png,$@) \
+		-o $(abspath $@) \
+		-o $(abspath $(patsubst %.3mf,%.png,$@)) \
 		--render \
 		--debug all \
 		$(TEMP_FILE)

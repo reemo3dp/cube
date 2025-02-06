@@ -1,6 +1,8 @@
+include<cubes/4_r_MAX.scad>;
+
 $fn = 100;
 
-PUZZLE_SIZE = 20*3;
+PUZZLE_SIZE = 20*DIM;
 
 SIZE=PUZZLE_SIZE/DIM;
 EXPLODE=10;
@@ -15,7 +17,7 @@ CHAMFER_WIDTH = 1;
 CONNECTOR_EDGE = 0;
 CONNECTOR_GAP = 0;
 
-COLORS = ["purple", "black"];
+COLORS = ["purple", "teal"];
 
 puzzle(PATH, 0);
 puzzle(PATH, 1);

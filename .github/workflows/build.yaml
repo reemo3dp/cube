@@ -71,4 +71,4 @@ jobs:
           name: ${{ needs.generate-version.outputs.trunkver }}
           tag_name: ${{ needs.generate-version.outputs.trunkver }}
           files: |
-            cubes/*
+            output/*

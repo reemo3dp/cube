@@ -15,7 +15,7 @@ jobs:
       trunkver: ${{ steps.trunkver.outputs.trunkver }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Generate trunkver
         id: trunkver
         uses: crftd-tech/trunkver@main
@@ -28,7 +28,7 @@ jobs:
     needs: [generate-version]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Generate metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -58,7 +58,7 @@ jobs:
     needs: [generate-version]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Render in OpenSCAD
         run: |
           set -euxo pipefail
